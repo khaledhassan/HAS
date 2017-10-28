@@ -1,8 +1,8 @@
-#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 
 const char* ssid = "TPLINK";
 const char* password = "1123581321";
@@ -38,8 +38,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print(topic);
   Serial.print("] ");
   
-  DynamicJsonBuffer jsonBuffer(100); // TODO/XXX: make this a stack variable/static allocation
-
+  StaticJsonBuffer<200> jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(payload);
 
   if (!root.success()) {
@@ -48,8 +47,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (root["led"] == 0) {
     digitalWrite(ledPin, HIGH);
+    digitalWrite(LED_BUILTIN, HIGH);
   } else if (root["led"] == 1) {
     digitalWrite(ledPin, LOW);
+    digitalWrite(LED_BUILTIN, LOW);
   }
 
   Serial.println();

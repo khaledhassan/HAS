@@ -6,3 +6,6 @@ services:
     image: ansi/raspberrypi3-mosquitto
     ports:
       - "1883:1883" # have to put port twice or it will pick a random port on host
+  controller:
+    build:
+      context: ../controller/

@@ -9,3 +9,5 @@ services:
   controller:
     build:
       context: ../controller/
+    links:
+      - mqtt

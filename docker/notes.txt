@@ -1,0 +1,5 @@
+base image
+https://hub.docker.com/r/resin/raspberrypi3-python/
+
+paho, requests both support Python 3, so let's go with that
+

@@ -27,7 +27,7 @@ Below is a proposed directory structure for this repository. Because the project
 ## MQTT strategy (proposed)
 We are using the mosquitto MQTT broker, exposed as port 1883 on the Raspberry Pi's external network connection and the same port toward the other Docker containers.
 
-ESP8266 nodes identify themselves by their WiFi MAC address, which is mapped using the config/nodes.yml file, used by both the web interface and the controller. 
+ESP8266 nodes identify themselves by their WiFi MAC address, which is mapped using the ```config/nodes.yml``` file, used by both the web interface and the controller. 
 
 The nodes publish their sensor data as JSON formatted messages on the topic ```sensor/<MAC>``` so that the controller can subscribe to ```sensor/+``` as a single-level wildcard (or use ```sensor/#``` for multi-level) to catch all the sensors using a single subscription. The controller publishes commands on the topic ```actuator/<target MAC>``` such that each node is subscribed to it's own topic. 
 

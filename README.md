@@ -5,7 +5,7 @@ Class project for EEL5934 IoT Design; Building Automation System using ESP8266 a
 Below is a proposed directory structure for this repository. Because the project should remain relatively simple overall, all components live together in the same repository.
 
 ```
-├── config
+├── config -- this directory will be mapped to the relevant containers (controller, web, etc) as a Docker volume
 │   └──nodes.yml.example
 ├── controller
 │   └──Dockerfile

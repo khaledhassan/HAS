@@ -11,6 +11,7 @@ const char* REPORT_TOPIC = "up/ac";
 const char* command_TOPIC = "down/ac";
 const char* JOIN_LEAVE_TOPIC = "join_leave";
 const char* NODE_NAME = "AC_NODE";
+
 // Predefine handlers
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
@@ -22,7 +23,7 @@ JsonObject& join_event = jsonBuffer.createObject();
 
 //Predefine pins
 const int dhtPin = 5;
-const int fanPin = 4;
+const int fanPin = 0;
 
 //Predefine
 String mac; //Official Arduino String Class. 
@@ -30,6 +31,7 @@ JsonObject& data_up = jsonBuffer.createObject(); // generate string, quote
 char data_up_char[256];
 char join_buffer[128];
 char will_buffer[128];
+int fanStatus = 0; // Fan is off when startup
 
 void connectWifi(){
   Serial.print("Connecting to ");
@@ -107,19 +109,23 @@ void onMsg(char* topic, byte* payload, unsigned int length) { //only command msg
     Serial.println("JSON parsing failed!");
   }
   
-  if (root["type"] == "whoru")
-  {// receive whoru query, re-publish join event
+  // No switch support. 
+  if(root["type"] == "whoru")
+  {
     Serial.println("WHO r u request received, republish join event. ");
     mqtt.publish(JOIN_LEAVE_TOPIC, join_buffer);
     delay(1000);
+  }else if(root["type"] == "FANON")
+  {
+    fanStatus = HIGH;
+    Serial.println("Fan turned on");
+  }else if(root["type"] == "FANOFF")
+  {
+    fanStatus = LOW;
+    Serial.println("Fan turned off");
+  }else{
+    Serial.println("Unknown event received.");
   }
-  // if (root["id"] == mac)
-
-  // if (root["led"] == 0) {
-  //   digitalWrite(LED_BUILTIN, HIGH);
-  // } else if (root["led"] == 1) {
-  //   digitalWrite(LED_BUILTIN, LOW);
-  // }
 
   Serial.println();
 }
@@ -130,7 +136,7 @@ void report()
   byte humidity = 0;
   int err = SimpleDHTErrSuccess;
   if ((err = dht11.read(dhtPin, &temperature, &humidity, NULL)) != SimpleDHTErrSuccess) {
-    Serial.print("Communication error with Sensor 1, err="); Serial.println(err);delay(1000);
+    Serial.print("Communication error with Sensor 1, err="); Serial.println(err);
     return;
   }
    // converting Celsius to Fahrenheit
@@ -151,6 +157,7 @@ void setup(void) {
   // pinMode(LED_BUILTIN, OUTPUT); // WIFI indicator
   // digitalWrite(LED_BUILTIN, LOW);
 
+  pinMode(fanPin, OUTPUT); // control the fan
   Serial.begin(9600);
   Serial.println();
   Serial.println();
@@ -169,6 +176,7 @@ void loop()
   }
   mqtt.loop();
   report();
+  digitalWrite(fanPin, fanStatus);
   delay(1000);
 }
 

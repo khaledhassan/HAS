@@ -1,14 +1,23 @@
 # vim: expandtab ts=2
+
+# This docker-compose file extends the regular docker-compose.yml file in this directory
+# for the purpose of running on amd64 architectures. It overrides some of the parameters
+# defined in the other file like which image to use, or specifying a different Dockerfile
+# but because it is extending the other file, it does not need to be explicity modified if
+# any other changes (common to both Raspberry Pi and amd64 environments) are made to the other file.
+
+# Run docker-compose like so:
+# docker-compose -f docker-compose.yml -f docker-compose-amd64.yml <command>
+# or ./run <command> which automatically detects if you are on amd64 or Raspberry Pi.
+
+# See <https://docs.docker.com/compose/extends/#understanding-multiple-compose-files> for
+# more information about extending docker-compose files.
+
 version: '3'
 
 services:
   mqtt:
     image: ansi/mosquitto
-    ports:
-      - "1883:1883" # have to put port twice or it will pick a random port on host
   controller:
     build:
-      context: ../controller/
       dockerfile: Dockerfile-amd64
-    links:
-      - mqtt

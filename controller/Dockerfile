@@ -15,3 +15,6 @@ RUN pip install \
                 paho-mqtt \
 		requests
 
+# Pass -u flag to python for unbuffered output according to https://github.com/moby/moby/issues/12447
+CMD ["python", "-u", "./main.py"] 
+

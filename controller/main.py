@@ -3,7 +3,7 @@ import json
 import pprint
 
 online_list = {}
-mqttServer = "192.168.1.118"
+mqttServer = "mqtt" # Handled by docker-compose link
 
 
 # The callback for when the client receives a CONNACK response from the server.

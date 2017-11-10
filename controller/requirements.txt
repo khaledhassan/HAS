@@ -1,0 +1,3 @@
+# HAS Controller required Python packages
+paho-mqtt
+requests

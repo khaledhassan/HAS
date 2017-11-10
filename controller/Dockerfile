@@ -10,7 +10,7 @@ WORKDIR /app
 
 COPY . /app
 
-RUN pip -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Pass -u flag to python for unbuffered output according to https://github.com/moby/moby/issues/12447
 CMD ["python", "-u", "./main.py"] 

@@ -1,0 +1,14 @@
+# vim: expandtab ts=2
+version: '3'
+
+services:
+  mqtt:
+    image: ansi/mosquitto
+    ports:
+      - "1883:1883" # have to put port twice or it will pick a random port on host
+  controller:
+    build:
+      context: ../controller/
+      dockerfile: Dockerfile-amd64
+    links:
+      - mqtt

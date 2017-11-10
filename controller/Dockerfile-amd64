@@ -1,0 +1,14 @@
+FROM python:3
+# docs at https://hub.docker.com/_/python/
+# XXX: perhaps use the 3-onbuild version? No, they're deprecated according to https://github.com/docker-library/docs/pull/911 and others
+
+WORKDIR /app
+
+COPY . /app
+
+# XXX: perhaps use requirements.txt to install pip packages automatically
+RUN pip install \
+                paho-mqtt \
+		requests
+
+CMD [ "python", "./main.py" ]

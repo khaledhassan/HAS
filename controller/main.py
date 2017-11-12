@@ -1,52 +1,86 @@
-import paho.mqtt.client as mqtt
 import json
-import pprint
+import yaml
+from circuits import handler, Component, Event
+import paho.mqtt.client as mqtt
 
 online_list = {}
-mqttServer = "mqtt" # Handled by docker-compose link
+mqtt_server = "mqtt" # Handled by docker-compose link, XXX/TODO: make this an environment variable with default to something
 
+config = {} # XXX/TODO: move all config data into this dict so we can access it from all controllers without
+            # having to pass it back and forth a lot
 
-# The callback for when the client receives a CONNACK response from the server.
-def on_connect(client, userdata, flags, rc):
-    print("Connected with result code "+str(rc))
+nodes = {}
 
-    # Subscribing in on_connect() means that if we lose the connection and
-    # reconnect then subscriptions will be renewed.
-    client.subscribe("up/+")
-    client.subscribe("join_leave")
+class ac_sensor(Event):
+    """AC Sensor Read Event"""
 
+class AcController(Component):
+    def __init__(self, mqtt_client):
+        super(AcController, self).__init__()
+        self.mqtt_client = mqtt_client
 
-# The callback for when a PUBLISH message is received from the server.
-def on_message(client, userdata, msg):
-    j = json.loads(msg.payload)
+    @handler("ac_sensor")
+    def handle_msg(self, msg):
+        print("AC Controller got msg:")
+        print(msg)
 
-    if msg.topic == "join_leave":#device join or leavethe network
+class motion_sensor(Event):
+    """Motion Detected Event, this event fires all controllers, but only one will respond"""
 
-        if j['o'] == "LEAVE":
-            online_list.pop(j['id'], None)
-        else: # JOIN
-            j.pop('o', None)
-            online_list[j['id']] = j
+class LightController(Component):
+    def __init__(self, mac):
+        super(LightController, self).__init__()
+        self.mac = mac
 
-    else:#data up report
+    @handler("motion_sensor")
+    def handle_msg(self, msg):
+        print("Light Controller got msg:")
+        print(msg)
 
-        if j["id"] in online_list: # known node, report sensor data
-            print(msg.payload)
-        else: # unknown node
-            client.publish(msg.topic.replace("up", "down"), "{\"id\":\""+j["id"]+"\",\"type\":\"whoru\"}")
-    print(online_list)
+class MainController(Component):
+    def __init__(self):
+        super(MainController, self).__init__()
+        self.client = mqtt.Client()
+        self.client.on_connect = self.mqtt_on_connect
+        self.client.on_message = self.mqtt_on_message
+        # register sub-controllers
+        self += AcController(self.client)
+        for node in nodes:
+            if node["type"] == "LIGHT":
+                self += LightController(node["mac"])
 
-client = mqtt.Client()
-client.on_connect = on_connect
-client.on_message = on_message
+    def started(self, *args):
+        self.client.connect(mqtt_server, 1883, 60)
+        self.client.loop_start()
 
-client.connect(mqttServer, 1883, 60)
+    def mqtt_on_connect(self, client, userdata, flags, rc):
+        print("Connected with result code "+str(rc))
+        # Subscribing in on_connect() means that if we lose the connection and
+        # reconnect then subscriptions will be renewed.
+        self.client.subscribe("sensor/#")
+        self.client.subscribe("join_leave")
 
-# Blocking call that processes network traffic, dispatches callbacks and
-# handles reconnecting.
-# Other loop*() functions are available that give a threaded interface and a
-# manual interface.
-try:
-    client.loop_forever()
-except KeyboardInterrupt:
-    print("Program end")
+    def mqtt_on_message(self, client, userdata, msg_raw):
+        msg = json.loads(msg_raw.payload)
+
+        if msg_raw.topic.startswith("sensor"):
+            for node in nodes:
+                if node["mac"] == msg["mac"]:
+                    if node["type"] == "AC":
+                        self.fire(ac_sensor(msg))
+                    elif node["type"] == "LIGHT":
+                        self.fire(motion_sensor(msg))
+                    elif node["type"] == "LOCK":
+                        pass
+
+# end MainController
+
+def main():
+    MainController().run()
+
+if __name__ == "__main__":
+    # load config YAML
+    with open("/config/nodes.yml") as f:
+        nodes = yaml.load(f)
+    main()
+

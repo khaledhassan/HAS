@@ -66,9 +66,9 @@ void connectWifi(){
   t.concat(mac);
   t.toCharArray(SENSOR_TOPIC, 32);
 
-  t = "actuator/";
-  t.concat(mac);
-  t.toCharArray(ACTUATOR_TOPIC, 32);
+  String m = "actuator/";
+  m.concat(mac);
+  m.toCharArray(ACTUATOR_TOPIC, 32);
 }
 
 void reconnect() {
@@ -164,7 +164,7 @@ void report()
    // converting Celsius to Fahrenheit
   byte f = temperature * 1.8 + 32;  
 
-  data_up["id"] = mac; // tell python who I am
+  data_up["mac"] = mac; // tell python who I am
   data_up["type"] = "AC"; // tell python what node I am
   data_up["t"] = f;
   data_up["h"] = humidity;

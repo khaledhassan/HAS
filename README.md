@@ -43,7 +43,8 @@ All instances of the node MAC address will be in uppercase and with no colons. T
 #### ```join_leave```
 When connecting to the broker, each node publishes a message like the following:
 ```
-{ "mac": <node MAC>,
+{
+  "mac": <node MAC>,
   "status": "join"
 }
 ``` 
@@ -51,7 +52,8 @@ to the topic ```join_leave/<node MAC>``` with the "retain" flag set to ```True``
 
 Each node also registers a last will and testament message with the broker like the following:
 ```
-{ "mac": <node MAC>,
+{
+  "mac": <node MAC>,
   "status": "leave"
 }
 ```
@@ -67,14 +69,16 @@ If a node connects and then disconnects before the controller starts up, the con
 
 #### AC Node actuator (fan on/off)
 ```
-{ "mac": <node MAC>,
+{
+  "mac": <node MAC>,
   "type": "FANON/FANOFF"
 }
 ```
 
 #### AC Node sensor (temperature/humidity)
 ```
-{ "mac": <node MAC>,
+{
+  "mac": <node MAC>,
   "type": "AC", 
   "t": "75", 
   "h": "60"

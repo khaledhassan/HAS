@@ -38,6 +38,8 @@ Nodes shall publish a "join" message on the topic ```join_leave/<node MAC>``` ac
 The "join" message is published with the MQTT "retain" flag set to ```True``` so that the controller will see that each node is online, even if the node comes online before the controller. The controller will subscribe to ```join_leave/+``` to recieve these messages.
 
 ### JSON Message Definitions
+All instances of the node MAC address will be in uppercase and with no colons. This applies in both the JSON body and the MQTT topic name.
+
 #### ```join_leave```
 When connecting to the broker, each node publishes a message like the following:
 ```

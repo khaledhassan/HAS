@@ -10,18 +10,31 @@ config = {} # XXX/TODO: move all config data into this dict so we can access it 
 
 nodes = {}
 
+target_temp = 60 # XXX/TODO: put this in the config object (via YAML, hopefully)
+
 class ac_sensor(Event):
     """AC Sensor Read Event"""
 
 class AcController(Component):
-    def __init__(self, mqtt_client):
+    def __init__(self, mqtt_client, mac):
         super(AcController, self).__init__()
         self.mqtt_client = mqtt_client
+        self.mac = mac
 
     @handler("ac_sensor")
     def handle_msg(self, msg):
         print("AC Controller got msg:")
         print(msg)
+        if "t" in msg:
+            current_temp = msg["t"]
+            # XXX/TODO: maintain state of fan and only send message once and refactor into change_fan_state function
+            if current_temp > target_temp:
+                msg = json.dumps({"id": self.mac, "type": "FANON"})
+                self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
+            elif current_temp <= target_temp:
+                msg = json.dumps({"id": self.mac, "type": "FANOFF"})
+                self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
+
 
 class motion_sensor(Event):
     """Motion Detected Event, this event fires all controllers, but only one will respond"""
@@ -77,8 +90,9 @@ class MainController(Component):
         if not self.sub_controllers_initialized:
             self.sub_controllers_initialized = True
             # register sub-controllers
-            self += AcController(self.client)
             for node in nodes:
+                if node["type"] == "AC":
+                    self += AcController(self.client, node["mac"])
                 if node["type"] == "LIGHT":
                     self += LightController(self.client, node["mac"])
 

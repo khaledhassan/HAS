@@ -1,15 +1,14 @@
+// AC_Node MAC:A0:20:A6:17:F4:25
 #include <ESP8266WiFi.h>
 #include <SimpleDHT.h>
 #include <ESP8266WebServer.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
-const char* ssid = "DearGod";
-const char* password = "1123581321";
-const char* mqtt_server = "192.168.1.118";
-const char* REPORT_TOPIC = "up/ac";
-const char* command_TOPIC = "down/ac";
-const char* JOIN_LEAVE_TOPIC = "join_leave";
+const char* ssid = "TP-LINK_PocketAP_287C0A";
+const char* password = "";
+const char* mqtt_server = "10.42.0.1";
+
 const char* NODE_NAME = "AC_NODE";
 
 // Predefine handlers
@@ -17,9 +16,6 @@ WiFiClient espClient;
 PubSubClient mqtt(espClient);
 SimpleDHT11 dht11;
 StaticJsonBuffer<256> jsonBuffer;
-// Prepare joind and will json obj
-JsonObject& will = jsonBuffer.createObject();
-JsonObject& join_event = jsonBuffer.createObject();
 
 //Predefine pins
 const int dhtPin = 5;
@@ -29,18 +25,22 @@ const int fanPin = 0;
 String mac; //Official Arduino String Class. 
 JsonObject& data_up = jsonBuffer.createObject(); // generate string, quote
 char data_up_char[256];
-char join_buffer[128];
-char will_buffer[128];
 int fanStatus = 0; // Fan is off when startup
 
+//Predefine MSG to MQTT
+char JLP[32];
+char SENSOR_TOPIC[32]; // Like: sensor/<macaddress>
+char ACTUATOR_TOPIC[32]; // Like: sensor/<macaddress>
+
 void connectWifi(){
+  delay(1000); //debug
   Serial.print("Connecting to ");
   Serial.println(ssid);
   /* Explicitly set the ESP8266 to be a WiFi-client, otherwise, it by default,
      would try to act as both a client and an access-point and could cause
      network-issues with your other WiFi-devices on your WiFi-network. */
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  WiFi.begin(ssid);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(200);
@@ -52,37 +52,64 @@ void connectWifi(){
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-  Serial.println("MAC address: ");
-  Serial.println(WiFi.macAddress());
+
   mac = WiFi.macAddress();// return String
-  // data_up["id"] = mac; // tell python who I am
+  mac.replace(String(':'), String()); // Remove All :
+  String JOIN_LEAVE_TOPIC = "join_leave/"; //only be used locally
+  JOIN_LEAVE_TOPIC.concat(mac);
+  JOIN_LEAVE_TOPIC.toCharArray(JLP, 32);
+  Serial.print("MAC address: ");
+  Serial.println(mac);
+
+  //Updating sensor and actuator topic
+  String t = "sensor/";
+  t.concat(mac);
+  t.toCharArray(SENSOR_TOPIC, 32);
+
+  t = "actuator/";
+  t.concat(mac);
+  t.toCharArray(ACTUATOR_TOPIC, 32);
 }
+
 void reconnect() {
   // Loop until we're reconnected
   bool connect_result;
-  
-  //Prepare mqtt will
-  will["id"] = mac;
-  will["type"] = "AC";
-  will["o"] = "LEAVE";
-  will.printTo(will_buffer);
+
   // Prepare join event 
-  join_event["id"] = mac;
+  char join_buffer[128];
+  JsonObject& join_event = jsonBuffer.createObject();
+  join_event["mac"] = mac;
   join_event["type"] = "AC";
-  join_event["o"] = "JOIN";
-  
+  join_event["status"] = "JOIN";
+
+  // Prepare joind and will json obj
+  char will_buffer[128];
+  JsonObject& will = jsonBuffer.createObject();
+  will["mac"] = mac;
+  will["type"] = "AC";
+  will["status"] = "LEAVE";
+
+  will.printTo(will_buffer);
   join_event.printTo(join_buffer);
+
+  Serial.print("Join Event:");
+  Serial.println(join_buffer);
+
+  Serial.print("Will Event:");
+  Serial.println(will_buffer);
 
   while (!mqtt.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    connect_result = mqtt.connect(NODE_NAME, JOIN_LEAVE_TOPIC, 2, false, will_buffer);
+    connect_result = mqtt.connect(NODE_NAME, JLP, 2, true, will_buffer);
     if (connect_result == true) {
       Serial.println("connected");
       // ... and subscribe to topic
-      mqtt.subscribe(command_TOPIC);
+      mqtt.subscribe(ACTUATOR_TOPIC);
+      Serial.print("Subscribe to ");
+      Serial.println(ACTUATOR_TOPIC);
       // report node join event
-      mqtt.publish(JOIN_LEAVE_TOPIC, join_buffer);
+      mqtt.publish(JLP, join_buffer, true);
     } else {
       Serial.print("failed, rc=");
       Serial.print(mqtt.state());
@@ -102,20 +129,15 @@ void onMsg(char* topic, byte* payload, unsigned int length) { //only command msg
     Serial.print((char)payload[i]);
   }
   Serial.println();
-  StaticJsonBuffer<256> jB;
-  JsonObject& root = jB.parseObject(payload);
+  StaticJsonBuffer<256> msgBuffer;
+  JsonObject& root = msgBuffer.parseObject(payload);
 
   if (!root.success()) {
     Serial.println("JSON parsing failed!");
   }
   
   // No switch support. 
-  if(root["type"] == "whoru")
-  {
-    Serial.println("WHO r u request received, republish join event. ");
-    mqtt.publish(JOIN_LEAVE_TOPIC, join_buffer);
-    delay(1000);
-  }else if(root["type"] == "FANON")
+  if(root["type"] == "FANON")
   {
     fanStatus = HIGH;
     Serial.println("Fan turned on");
@@ -140,17 +162,15 @@ void report()
     return;
   }
    // converting Celsius to Fahrenheit
-
   byte f = temperature * 1.8 + 32;  
 
   data_up["id"] = mac; // tell python who I am
-  data_up["type"] = "AC"; // tell python who I am
+  data_up["type"] = "AC"; // tell python what node I am
   data_up["t"] = f;
   data_up["h"] = humidity;
-  String output = ""; //String class is from ArduinoJSON library
-  data_up.printTo(output); //dump json to output
-  output.toCharArray(data_up_char, 128);
-  mqtt.publish(REPORT_TOPIC, data_up_char);
+  data_up.printTo(data_up_char); //dump json to output
+  // output.toCharArray(data_up_char, 128);
+  mqtt.publish(SENSOR_TOPIC, data_up_char);
 }
 
 void setup(void) {

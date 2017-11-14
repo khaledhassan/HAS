@@ -1,3 +1,5 @@
 # HAS Controller required Python packages
+circuits
 paho-mqtt
 requests
+PyYAML

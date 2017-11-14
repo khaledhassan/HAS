@@ -11,3 +11,5 @@ services:
       context: ../controller/
     links:
       - mqtt
+    volumes:
+      - ../config:/config

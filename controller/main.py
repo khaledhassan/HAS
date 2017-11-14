@@ -44,12 +44,15 @@ class LightController(Component):
         print("Light Controller got msg:")
         print(msg)
         if "mac" in msg:
-            if "state" in msg:
-                self.state = msg["state"]
-            if "motion" in msg:
-                pass # XXX/TODO: set last motion datetime, start timer, turn on light if not on
+            if msg["mac"] == self.mac:
+                if "state" in msg:
+                    self.state = msg["state"]
+                if "motion" in msg:
+                    pass # XXX/TODO: set last motion datetime, start timer, turn on light if not on
+            else:
+                pass # message not for us, hopefully there's another controller out there
         else:
-            pass # XXX/TODO: message not for us?
+            pass # invalid message?
 
 
 class MainController(Component):

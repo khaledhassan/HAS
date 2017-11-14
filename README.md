@@ -66,7 +66,17 @@ If a node connects and then disconnects before the controller starts up, the con
 **TBD**
 
 #### AC Node actuator (fan on/off)
-**TBD**
+```
+{ "mac": <node MAC>,
+  "type": "FANON/FANOFF"
+}
+```
 
 #### AC Node sensor (temperature/humidity)
-**TBD**
+```
+{ "mac": <node MAC>,
+  "type": "AC", 
+  "t": "75", 
+  "h": "60"
+}
+```

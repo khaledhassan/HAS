@@ -3,7 +3,6 @@ import yaml
 from circuits import handler, Component, Event
 import paho.mqtt.client as mqtt
 
-online_list = {}
 mqtt_server = "mqtt" # Handled by docker-compose link, XXX/TODO: make this an environment variable with default to something
 
 config = {} # XXX/TODO: move all config data into this dict so we can access it from all controllers without
@@ -73,7 +72,7 @@ class MainController(Component):
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
         self.client.subscribe("sensor/#")
-        self.client.subscribe("join_leave")
+        self.client.subscribe("join_leave/#")
 
         if not self.sub_controllers_initialized:
             self.sub_controllers_initialized = True
@@ -88,14 +87,29 @@ class MainController(Component):
         msg = json.loads(msg_raw.payload)
 
         if msg_raw.topic.startswith("sensor"):
-            for node in nodes:
-                if node["mac"] == msg["mac"]:
-                    if node["type"] == "AC":
-                        self.fire(ac_sensor(msg))
-                    elif node["type"] == "LIGHT":
-                        self.fire(motion_sensor(msg))
-                    elif node["type"] == "LOCK":
-                        pass
+            if "mac" in msg:
+                for node in nodes:
+                    if node["mac"] == msg["mac"]:
+                        if node["type"] == "AC":
+                            self.fire(ac_sensor(msg))
+                        elif node["type"] == "LIGHT":
+                            self.fire(motion_sensor(msg))
+                        elif node["type"] == "LOCK":
+                            pass
+            else:
+                pass # invalid message, doesn't have "mac" field
+        if msg_raw.topic.startswith("join_leave"):
+            if ("mac" in msg) and ("status" in msg):
+                for node in nodes:
+                    if node["mac"] == msg["mac"]:
+                        if msg["status"] == "join":
+                            node["online"] = True
+                        elif msg["status"] == "leave":
+                            node["online"] = False
+                        else:
+                            pass # invalid message (status unknown)
+            else:
+                pass # invalid message (needs mac and status)
 
 # end MainController
 

@@ -73,6 +73,7 @@ class MainController(Component):
         self.client.subscribe("join_leave")
 
         if not self.sub_controllers_initialized:
+            self.sub_controllers_initialized = True
             # register sub-controllers
             self += AcController(self.client)
             for node in nodes:

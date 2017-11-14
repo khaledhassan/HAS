@@ -28,14 +28,29 @@ class motion_sensor(Event):
     """Motion Detected Event, this event fires all controllers, but only one will respond"""
 
 class LightController(Component):
-    def __init__(self, mac):
+    def __init__(self, mqtt_client, mac):
         super(LightController, self).__init__()
+        self.mqtt_client = mqtt_client
         self.mac = mac
+        self.state = False # False means off, True means on. Query the light's actual state next:
+        self.query_status()
+
+    def query_status(self):
+        msg = json.dumps({"id": self.mac, "cmd": "state"})
+        self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
 
     @handler("motion_sensor")
     def handle_msg(self, msg):
         print("Light Controller got msg:")
         print(msg)
+        if "mac" in msg:
+            if "state" in msg:
+                self.state = msg["state"]
+            if "motion" in msg:
+                pass # XXX/TODO: set last motion datetime, start timer, turn on light if not on
+        else:
+            pass # XXX/TODO: message not for us?
+
 
 class MainController(Component):
     def __init__(self):
@@ -43,11 +58,8 @@ class MainController(Component):
         self.client = mqtt.Client()
         self.client.on_connect = self.mqtt_on_connect
         self.client.on_message = self.mqtt_on_message
-        # register sub-controllers
-        self += AcController(self.client)
-        for node in nodes:
-            if node["type"] == "LIGHT":
-                self += LightController(node["mac"])
+        self.sub_controllers_initialized = False
+
 
     def started(self, *args):
         self.client.connect(mqtt_server, 1883, 60)
@@ -59,6 +71,14 @@ class MainController(Component):
         # reconnect then subscriptions will be renewed.
         self.client.subscribe("sensor/#")
         self.client.subscribe("join_leave")
+
+        if not self.sub_controllers_initialized:
+            # register sub-controllers
+            self += AcController(self.client)
+            for node in nodes:
+                if node["type"] == "LIGHT":
+                    self += LightController(self.client, node["mac"])
+
 
     def mqtt_on_message(self, client, userdata, msg_raw):
         msg = json.loads(msg_raw.payload)

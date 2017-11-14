@@ -29,8 +29,44 @@ We are using the mosquitto MQTT broker, exposed as port 1883 on the Raspberry Pi
 
 ESP8266 nodes identify themselves by their WiFi MAC address, which is mapped using the ```config/nodes.yml``` file, used by both the web interface and the controller. 
 
-The nodes publish their sensor data as JSON formatted messages on the topic ```sensor/<MAC>``` so that the controller can subscribe to ```sensor/+``` as a single-level wildcard (or use ```sensor/#``` for multi-level) to catch all the sensors using a single subscription. **Proposal:** Use a single topic ```sensor``` for all nodes for messages going toward the controller (i.e. sensor readings). I (Khaled) don't see much benefit for having separate topics for each node in this case, but do for the actuator messages (so that nodes do not see messages intended for other nodes).
+The nodes publish their sensor data as JSON formatted messages on the topic ```sensor``` so that the controller can subscribe to ```sensor/#``` to catch all the sensors using a single subscription (using multi-level wildcard instead of single-level ```sensor/+``` so that the controller will see messages published to subtopics of ```sensor```).
 
 The controller publishes commands on the topic ```actuator/<target MAC>``` such that each node is subscribed to it's own topic. 
 
-**Is this necessary?:** Nodes shall publish messages on the topic ```join_leave``` with their MAC address and "connected" (exact format **TBD**) and shall register a last will and testament message with the broker with their MAC address and "disconnected" (again, format **TBD**) so that the controller is aware of their join/part status. The controller should also periodically (rate **TBD**) "ping" the nodes in case it does not recieve the "connected" message if the controller (re)starts after the node connects to the broker.
+Nodes shall publish a "join" message on the topic ```join_leave/<node MAC>``` according to the format defined below and shall register a last will and testament message on the same topic indicating "leave" so that the controller is aware of the nodes' status. 
+
+The "join" message is published with the MQTT "retain" flag set to ```True``` so that the controller will see that each node is online, even if the node comes online before the controller. The controller will subscribe to ```join_leave/+``` to recieve these messages.
+
+### JSON Message Definitions
+All instances of the node MAC address will be in uppercase and with no colons. This applies in both the JSON body and the MQTT topic name.
+
+#### ```join_leave```
+When connecting to the broker, each node publishes a message like the following:
+```
+{ "mac": <node MAC>,
+  "status": "join"
+}
+``` 
+to the topic ```join_leave/<node MAC>``` with the "retain" flag set to ```True```.
+
+Each node also registers a last will and testament message with the broker like the following:
+```
+{ "mac": <node MAC>,
+  "status": "leave"
+}
+```
+to the same topic, with the "retain" flag set to ```False```. 
+
+If a node connects and then disconnects before the controller starts up, the controller shouldn't see any message from that node. The last will message should "clear" the previous join message from the node's topic.
+
+#### Light Node sensor (motion detected)
+**TBD**
+
+#### Light Node actuator (light on/off)
+**TBD**
+
+#### AC Node actuator (fan on/off)
+**TBD**
+
+#### AC Node sensor (temperature/humidity)
+**TBD**

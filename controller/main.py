@@ -1,6 +1,6 @@
 import json
 import yaml
-from circuits import handler, Component, Event
+from circuits import handler, Component, Event, Debugger
 import paho.mqtt.client as mqtt
 
 mqtt_server = "mqtt" # Handled by docker-compose link, XXX/TODO: make this an environment variable with default to something
@@ -128,7 +128,7 @@ class MainController(Component):
 # end MainController
 
 def main():
-    MainController().run()
+    (MainController() + Debugger()).run()
 
 if __name__ == "__main__":
     # load config YAML

@@ -1,6 +1,7 @@
 import json
 import yaml
 from circuits import handler, Component, Event, Debugger
+from circuits.core.timers import Timer
 import paho.mqtt.client as mqtt
 
 mqtt_server = "mqtt" # Handled by docker-compose link, XXX/TODO: make this an environment variable with default to something
@@ -11,6 +12,7 @@ config = {} # XXX/TODO: move all config data into this dict so we can access it 
 nodes = {}
 
 target_temp = 60 # XXX/TODO: put this in the config object (via YAML, hopefully)
+motion_timeout_seconds = 5*60 # 5 minutes, XXX/TODO: put this in the config object (via YAML, hopefully)
 
 class ac_sensor(Event):
     """AC Sensor Read Event"""
@@ -39,33 +41,57 @@ class AcController(Component):
 class motion_sensor(Event):
     """Motion Detected Event, this event fires all controllers, but only one will respond"""
 
+class motion_timeout(Event):
+    """Motion Sensor Timeout"""
+
 class LightController(Component):
     def __init__(self, mqtt_client, mac):
         super(LightController, self).__init__()
         self.mqtt_client = mqtt_client
         self.mac = mac
+        self.timer = None
         self.state = False # False means off, True means on. Query the light's actual state next:
-        self.query_status()
+        self.query_state()
 
-    def query_status(self):
+    def query_state(self):
         msg = json.dumps({"id": self.mac, "cmd": "state"})
+        self.mqtt_client.publish("actuator/{}".format(self.mac), msg, retain=True) # retained message in case the controller starts before the node connects
+
+    def change_state(self, want_on):
+        if want_on:
+            msg = json.dumps({"id": self.mac, "cmd": "light_on"})
+        else:
+            msg = json.dumps({"id": self.mac, "cmd": "light_off"})
+
         self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
+        self.state = want_on
 
     @handler("motion_sensor")
     def handle_msg(self, msg):
-        print("Light Controller got msg:")
-        print(msg)
         if "mac" in msg:
             if msg["mac"] == self.mac:
                 if "state" in msg:
                     self.state = msg["state"]
                 if "motion" in msg:
-                    pass # XXX/TODO: set last motion datetime, start timer, turn on light if not on
+                    self.change_state(want_on = True)
+
+                    if self.timer is not None: # set to None in __init__ and the handler for "motion_timeout"
+                        self.timer.reset() # if there was a timer from last time, reset it
+                    else:
+                        self.timer = Timer(motion_timeout_seconds, motion_timeout(self.mac))
+                        self += self.timer # otherwise, re-register it (why does "self.register(self.timer)" not work?)
             else:
                 pass # message not for us, hopefully there's another controller out there
         else:
             pass # invalid message?
 
+    @handler("motion_timeout")
+    def handle_timer(self, mac):
+        if mac == self.mac:
+            self.change_state(want_on = False)
+            self.timer = None # get ready for next motion detected
+        else:
+            pass # not meant for us!
 
 class MainController(Component):
     def __init__(self):

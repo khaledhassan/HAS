@@ -61,11 +61,38 @@ to the same topic, with the "retain" flag set to ```False```.
 
 If a node connects and then disconnects before the controller starts up, the controller shouldn't see any message from that node. The last will message should "clear" the previous join message from the node's topic.
 
-#### Light Node sensor (motion detected)
-**TBD**
-
 #### Light Node actuator (light on/off)
-**TBD**
+```
+{
+  "mac": <node MAC>,
+  "cmd": "light_on/light_off"
+}
+```
+
+#### Light Node sensor (motion detected)
+```
+{
+  "mac": <node MAC>,
+  "motion": "detected" (though the value doesn't really matter)
+}
+```
+
+#### Light Node status query (published on actuator subtopic)
+This message is used by the controller to determine light state on controller startup (e.g. if the controller restarts while the lights are operating)
+```
+{
+  "mac": <node MAC>,
+  "cmd": "state"
+}
+```
+
+#### Light Node status response (published on sensor subtopic)
+```
+{
+  "mac": <node MAC>,
+  "state": true/false
+}
+```
 
 #### AC Node actuator (fan on/off)
 ```

@@ -112,6 +112,7 @@ class MainController(Component):
         # reconnect then subscriptions will be renewed.
         self.client.subscribe("sensor/#")
         self.client.subscribe("join_leave/#")
+        self.client.subscribe("target_temp")
 
         if not self.sub_controllers_initialized:
             self.sub_controllers_initialized = True
@@ -125,6 +126,10 @@ class MainController(Component):
 
     def mqtt_on_message(self, client, userdata, msg_raw):
         msg = json.loads(msg_raw.payload)
+
+        if msg_raw.topic == "target_temp":
+            global target_temp
+            target_temp = int(msg_raw.payload)
 
         if msg_raw.topic.startswith("sensor"):
             if "mac" in msg:

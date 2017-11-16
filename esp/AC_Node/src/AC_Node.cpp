@@ -7,7 +7,7 @@
 
 const char* ssid = "TP-LINK_PocketAP_287C0A";
 const char* password = "";
-const char* mqtt_server = "10.42.0.1";
+const char* mqtt_server = "10.42.0.248";
 
 const char* NODE_NAME = "AC_NODE";
 

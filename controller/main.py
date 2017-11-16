@@ -21,7 +21,20 @@ class AcController(Component):
     def __init__(self, mqtt_client, mac):
         super(AcController, self).__init__()
         self.mqtt_client = mqtt_client
+        self.fan_on = False
         self.mac = mac
+
+    def change_fan_state(self, want_on):
+        #XXX/TODO: now that we've refactored into a function that uses fan state, implement a state query command like we have in the light controller
+        if want_on is not self.fan_on:
+            if want_on:
+                msg = json.dumps({"mac": self.mac, "type": "FANON"})
+            else:
+                msg = json.dumps({"mac": self.mac, "type": "FANOFF"})
+
+            self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
+            self.fan_on = want_on
+
 
     @handler("ac_sensor")
     def handle_msg(self, msg):
@@ -29,13 +42,10 @@ class AcController(Component):
         print(msg)
         if "t" in msg:
             current_temp = msg["t"]
-            # XXX/TODO: maintain state of fan and only send message once and refactor into change_fan_state function
             if current_temp > target_temp:
-                msg = json.dumps({"mac": self.mac, "type": "FANON"})
-                self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
+                self.change_fan_state(True)
             elif current_temp <= target_temp:
-                msg = json.dumps({"mac": self.mac, "type": "FANOFF"})
-                self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
+                self.change_fan_state(False)
 
 
 class motion_sensor(Event):

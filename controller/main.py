@@ -1,10 +1,14 @@
 import json
+import os
 import yaml
 from circuits import handler, Component, Event, Debugger
 from circuits.core.timers import Timer
 import paho.mqtt.client as mqtt
 
-mqtt_server = "mqtt" # Handled by docker-compose link, XXX/TODO: make this an environment variable with default to something
+if "MQTT_SERVER" in os.environ:
+    mqtt_server = os.environ.get("MQTT_SERVER")
+else:
+    mqtt_server = "mqtt" # Handled by docker-compose link
 
 config = {} # XXX/TODO: move all config data into this dict so we can access it from all controllers without
             # having to pass it back and forth a lot
@@ -173,7 +177,12 @@ def main():
 
 if __name__ == "__main__":
     # load config YAML
-    with open("/config/nodes.yml") as f:
+    if "NODE_CONFIG" in os.environ:
+        config_path = os.environ.get("NODE_CONFIG")
+    else:
+        config_path = "/config/nodes.yml"
+
+    with open(config_path) as f:
         nodes = yaml.load(f)
     main()
 

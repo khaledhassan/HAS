@@ -31,10 +31,10 @@ class AcController(Component):
             current_temp = msg["t"]
             # XXX/TODO: maintain state of fan and only send message once and refactor into change_fan_state function
             if current_temp > target_temp:
-                msg = json.dumps({"id": self.mac, "type": "FANON"})
+                msg = json.dumps({"mac": self.mac, "type": "FANON"})
                 self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
             elif current_temp <= target_temp:
-                msg = json.dumps({"id": self.mac, "type": "FANOFF"})
+                msg = json.dumps({"mac": self.mac, "type": "FANOFF"})
                 self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
 
 
@@ -54,14 +54,14 @@ class LightController(Component):
         self.query_state()
 
     def query_state(self):
-        msg = json.dumps({"id": self.mac, "cmd": "state"})
+        msg = json.dumps({"mac": self.mac, "cmd": "state"})
         self.mqtt_client.publish("actuator/{}".format(self.mac), msg, retain=True) # retained message in case the controller starts before the node connects
 
     def change_state(self, want_on):
         if want_on:
-            msg = json.dumps({"id": self.mac, "cmd": "light_on"})
+            msg = json.dumps({"mac": self.mac, "cmd": "light_on"})
         else:
-            msg = json.dumps({"id": self.mac, "cmd": "light_off"})
+            msg = json.dumps({"mac": self.mac, "cmd": "light_off"})
 
         self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
         self.state = want_on

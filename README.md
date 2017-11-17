@@ -111,3 +111,20 @@ This message is used by the controller to determine light state on controller st
   "h": "60"
 }
 ```
+
+#### Door lock Node actuator (lock on/off)
+```
+{
+  "mac": <node MAC>,
+  "type": "LOCK/UNLOCK"
+}
+```
+
+#### AC Node sensor (locked: 0/1)
+```
+{
+  "mac": <node MAC>,
+  "type": "door",
+  "locked": 1
+}
+```

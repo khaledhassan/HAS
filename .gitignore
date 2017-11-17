@@ -1,2 +1,8 @@
 .vscode
-PlatformIoT
+PlatformIoT/
+
+# Ignore my PlatformIO config file.
+esp/Door_Node/*
+!esp/Door_Node/src/
+esp/AC_Node/*
+!esp/AC_Node/src/

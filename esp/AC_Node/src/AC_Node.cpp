@@ -5,9 +5,9 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
-const char* ssid = "TP-LINK_PocketAP_287C0A";
-const char* password = "";
-const char* mqtt_server = "10.42.0.248";
+const char* ssid = "TPLINK";
+const char* password = "1123581321";
+const char* mqtt_server = "192.168.0.102"; //always this if using TPLINK
 
 const char* NODE_NAME = "AC_NODE";
 
@@ -15,7 +15,7 @@ const char* NODE_NAME = "AC_NODE";
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
 SimpleDHT11 dht11;
-StaticJsonBuffer<256> jsonBuffer;
+
 
 //Predefine pins
 const int dhtPin = 5;
@@ -23,9 +23,10 @@ const int fanPin = 0;
 
 //Predefine
 String mac; //Official Arduino String Class. 
-JsonObject& data_up = jsonBuffer.createObject(); // generate string, quote
+
 char data_up_char[256];
 int fanStatus = 0; // Fan is off when startup
+int last_report_time = 0; //initialize last report time in millisecond
 
 //Predefine MSG to MQTT
 char JLP[32];
@@ -40,7 +41,7 @@ void connectWifi(){
      would try to act as both a client and an access-point and could cause
      network-issues with your other WiFi-devices on your WiFi-network. */
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid);
+  WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(200);
@@ -77,6 +78,7 @@ void reconnect() {
 
   // Prepare join event 
   char join_buffer[128];
+  StaticJsonBuffer<256> jsonBuffer; //only local 
   JsonObject& join_event = jsonBuffer.createObject();
   join_event["mac"] = mac;
   join_event["type"] = "AC";
@@ -148,6 +150,7 @@ void onMsg(char* topic, byte* payload, unsigned int length) { //only command msg
   }else{
     Serial.println("Unknown event received.");
   }
+  digitalWrite(fanPin, fanStatus);
 
   Serial.println();
 }
@@ -164,6 +167,8 @@ void report()
    // converting Celsius to Fahrenheit
   byte f = temperature * 1.8 + 32;  
 
+  StaticJsonBuffer<256> jsonBuffer; //only local 
+  JsonObject& data_up = jsonBuffer.createObject(); // generate string, quote
   data_up["mac"] = mac; // tell python who I am
   data_up["type"] = "AC"; // tell python what node I am
   data_up["t"] = f;
@@ -183,10 +188,9 @@ void setup(void) {
   Serial.println();
   Serial.println("System booting...");
   connectWifi();
-  
-
   mqtt.setServer(mqtt_server, 1883);
   mqtt.setCallback(onMsg);
+  
 }
 
 void loop()
@@ -194,9 +198,11 @@ void loop()
   if (!mqtt.connected()) {
     reconnect();
   }
-  mqtt.loop();
-  report();
-  digitalWrite(fanPin, fanStatus);
-  delay(1000);
-}
 
+  mqtt.loop();
+
+  if(millis() - last_report_time > 1000){
+    report();
+    last_report_time = millis(); // update last report time
+  }
+}

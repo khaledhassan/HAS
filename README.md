@@ -24,7 +24,7 @@ Below is a proposed directory structure for this repository. Because the project
 │   └──other scripts/assets used to run web interface
 ```
 
-## MQTT strategy (proposed)
+## MQTT strategy
 We are using the mosquitto MQTT broker, exposed as port 1883 on the Raspberry Pi's external network connection and the same port toward the other Docker containers.
 
 ESP8266 nodes identify themselves by their WiFi MAC address, which is mapped using the ```config/nodes.yml``` file, used by both the web interface and the controller. 
@@ -112,7 +112,7 @@ This message is used by the controller to determine light state on controller st
 }
 ```
 
-#### Door lock Node actuator (lock on/off)
+#### Door Lock Node actuator (lock on/off)
 ```
 {
   "mac": <node MAC>,
@@ -120,7 +120,7 @@ This message is used by the controller to determine light state on controller st
 }
 ```
 
-#### AC Node sensor (locked: 0/1)
+#### Door Lock Node sensor (locked: 0/1)
 ```
 {
   "mac": <node MAC>,

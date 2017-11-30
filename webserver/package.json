@@ -1,0 +1,9 @@
+{
+  "name": "HomeServer",
+  "version": "0.0.1",
+  "description": "Homeserver and web server for IoT project",
+  "dependencies": {
+    "express": "^4.16.2",
+    "socket.io": "^2.0.4"
+  }
+}

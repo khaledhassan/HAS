@@ -3,30 +3,42 @@
 <link href="/css/login.css" rel="stylesheet">
 
 <script>
-    window.addEventListener("DOMContentLoaded", function() {
+    $(function(){
         new Vue({
             el: '#container',
             data: {
-
+            },
+            methods:{
+                test: function(){
+                    alert('test')
+                },
+                drop: function(){
+                    alert('drop')
+                }
             }
         })
-    }, false);
+
+    })
 
 </script>
 <div id='container' class="container">
   <form class="form-signin" method="post" >
     <h2 class="form-signin-heading">Please sign in HAS</h2>
-
     <label for="inputPassword" class="sr-only">Password</label>
 
-    <div class="input-group">
-      <div class="input-group-addon">*</div>
+    <div class="input-group <% if (fail == true) { %>has-error<% } %>">
+      <div class="input-group-addon"><span class="glyphicon glyphicon-console" aria-hidden="true"></span></div>
       <input name='pass' type="number" class="form-control" id="password" placeholder="">
     </div>
 
+      <% if (fail == true) { %>
+      <div class="alert alert-danger" role="alert">Wrong code. Please try again.</div>
+      <% } %>
+
+
     <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+
   </form>
-  <img src="<%= qrcode_base64%>">
 </div>
 
 <%- include('./footer.ejs') %>

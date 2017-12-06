@@ -1,0 +1,27 @@
+<%- include('./header.ejs') %>
+
+<!--<link href="/css/login.css" rel="stylesheet">-->
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    $(function(){
+        door = new Vue({
+            el: '#container',
+            data: {
+                socket: io("/door")
+            },
+            methods:{
+
+            }
+        })
+
+    })
+
+</script>
+<div id='container' class="container">
+    Door
+</div>
+
+<%- include('./footer.ejs') %>
+

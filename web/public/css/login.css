@@ -27,5 +27,9 @@ body {
 }
 
 .form-signin .btn{
-    margin-top: 10px;
+
+}
+
+.form-signin .input-group{
+    margin-bottom: 10px;
 }

@@ -16,7 +16,7 @@ router.get('/', function(req, res, next){
     // Get the data URL of the authenticator URL
     QRCode.toDataURL(qrcode_url, function (err, data_url) {
         res.render('login', {
-            qrcode_base64: data_url
+            fail: false
         });
     });
 });
@@ -39,8 +39,15 @@ router.post('/', function (req, res, next) {
         req.session.logined = true;
         res.redirect('/');
     } else {
-        res.end('Wrong code');
+        res.render('login', {
+            fail: true
+        });
     }
+})
+
+router.get('/logout', function (req, res, next) {
+    req.session.logined = undefined;
+    res.redirect('/');
 })
 
 // Show the QRCODE for user to add to Google Authenticator.

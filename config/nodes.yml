@@ -1,6 +1,9 @@
 - name: AC
-  mac: "A020A617F425"
+  mac: "A020A608148D"
   type: AC
-- name: Khaled Light
-  mac: "A020A617AD47"
+- name: Light
+  mac: "A020A6169209"
   type: LIGHT
+- name: Door
+  mac: "A020A617F425"
+  type: DOOR

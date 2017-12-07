@@ -142,10 +142,9 @@ void change_state(bool want_on){
 }
 
 void motion_ISR(){
+    Serial.println("Motion Detected");
     motion_detected = true;
 }
-
-
 
 void onMsg(char* topic, byte* payload, unsigned int length) { //only command msg, like whoru, or settemperature
     Serial.print("Message arrived [");
@@ -173,7 +172,6 @@ void onMsg(char* topic, byte* payload, unsigned int length) { //only command msg
     } else {
       Serial.println("Unknown event received.");
     }
-  
     Serial.println();
 }
 

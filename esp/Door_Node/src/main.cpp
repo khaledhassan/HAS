@@ -5,10 +5,10 @@
 #include <ArduinoJson.h>
 
 #define LOCKED HIGH
-
+ 
 const char* ssid = "TPLINK";
 const char* password = "1123581321";
-const char* mqtt_server = "192.168.0.102"; //always this if using TPLINK
+const char* mqtt_server = "10.42.0.1"; //Khaled's computer, will be chanded to 
 
 const char* NODE_NAME = "DOOR_NODE";
 
@@ -177,6 +177,8 @@ void setup(void) {
   connectWifi();
   mqtt.setServer(mqtt_server, 1883);
   mqtt.setCallback(onMsg);
+  lock_status = LOCKED;
+  set_lock();
 }
 
 void loop()

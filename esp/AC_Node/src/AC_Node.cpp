@@ -7,7 +7,7 @@
 
 const char* ssid = "TPLINK";
 const char* password = "1123581321";
-const char* mqtt_server = "192.168.0.102"; //always this if using TPLINK
+const char* mqtt_server = "10.42.0.1"; //always this if using TPLINK
 
 const char* NODE_NAME = "AC_NODE";
 
@@ -15,7 +15,6 @@ const char* NODE_NAME = "AC_NODE";
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
 SimpleDHT11 dht11;
-
 
 //Predefine pins
 const int dhtPin = 5;

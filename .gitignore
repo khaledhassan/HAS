@@ -6,3 +6,5 @@ esp/Door_Node/*
 !esp/Door_Node/src/
 esp/AC_Node/*
 !esp/AC_Node/src/
+esp/Light_Node/*
+!esp/Light_Node/src/

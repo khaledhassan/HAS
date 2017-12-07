@@ -110,32 +110,32 @@ class LightController(Component):
 class MainController(Component):
     def __init__(self):
         super(MainController, self).__init__()
-        self.client = mqtt.Client()
-        self.client.on_connect = self.mqtt_on_connect
-        self.client.on_message = self.mqtt_on_message
+        self.mqtt_client = mqtt.Client()
+        self.mqtt_client.on_connect = self.mqtt_on_connect
+        self.mqtt_client.on_message = self.mqtt_on_message
         self.sub_controllers_initialized = False
 
 
     def started(self, *args):
-        self.client.connect(mqtt_server, 1883, 60)
-        self.client.loop_start()
+        self.mqtt_client.connect(mqtt_server, 1883, 60)
+        self.mqtt_client.loop_start()
 
     def mqtt_on_connect(self, client, userdata, flags, rc):
         print("Connected with result code "+str(rc))
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
-        self.client.subscribe("sensor/#")
-        self.client.subscribe("join_leave/#")
-        self.client.subscribe("target_temp")
+        self.mqtt_client.subscribe("sensor/#")
+        self.mqtt_client.subscribe("join_leave/#")
+        self.mqtt_client.subscribe("target_temp")
 
         if not self.sub_controllers_initialized:
             self.sub_controllers_initialized = True
             # register sub-controllers
             for node in nodes:
                 if node["type"] == "AC":
-                    self += AcController(self.client, node["mac"])
+                    self += AcController(self.mqtt_client, node["mac"])
                 if node["type"] == "LIGHT":
-                    self += LightController(self.client, node["mac"])
+                    self += LightController(self.mqtt_client, node["mac"])
 
 
     def mqtt_on_message(self, client, userdata, msg_raw):

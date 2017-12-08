@@ -1,0 +1,33 @@
+.icon .lock-status{
+    margin: 16.66% auto 0;
+    height: 256px;
+    width: 256px;
+    position: relative;
+    /*background-color: rgb(16,117,161);*/
+    display: block;
+    -webkit-background-size: contain;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+}
+
+.icon .lock-status.locked{
+    background-image: url("/images/locked.png");
+}
+
+.icon .lock-status.unlocked{
+    background-image: url("/images/unlocked.png");
+}
+
+.icon .txt-status{
+    margin-top: 16px;
+    text-align: center;
+    display: block;
+    font-size: 24px;
+}
+
+.unlock-btn{
+    margin: 16px auto;
+    display: block
+}

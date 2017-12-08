@@ -2,17 +2,65 @@
 
 <!--<link href="/css/login.css" rel="stylesheet">-->
 
-<script src="/socket.io/socket.io.js"></script>
-
 <script>
     $(function(){
         door = new Vue({
             el: '#container',
             data: {
-                socket: io("/door")
+                locked: true, //1, locked, 0, unlocked, -1, unlocking
+                unlocking: false,
+                wsadd: 'ws://10.42.0.167:8080'
             },
             methods:{
+                send_unlock: function(){
+                    this.unlocking = true;
+                    setInterval(function(){
+                        door.unlocking = false;
+                    }, 3000)
 
+                },
+                handle_msg: function(msg){//ws msg
+                    var data = msg.data;
+                    try {
+                        var data_from_sensor = JSON.parse(data);
+                        if(data_from_sensor.type != 'door'){
+                            return
+                        }else{
+                            this.locked = (data_from_sensor.status == 'locked')?true:false;
+                        }
+                    } catch(e) {
+                        alert(e); // error in the above string (in this case, yes)!
+                    }
+                }
+            },
+            computed: {
+                door_txt: function(){
+                    switch(this.unlocking){
+                        case true:
+                            return 'Unlocking';
+                            break;
+                        case false:
+                            return 'Unlock the door';
+                            break;
+                    }
+                }
+            },
+            mounted: function(){
+                ws = new WebSocket(this.wsadd);
+
+                ws.onopen = function(evt) {
+                    console.log("Connection open ...");
+                    ws.send("Hello WebSockets!");
+                };
+
+                ws.onmessage = function(evt) {
+                    console.log( "Received Message: " + evt.data);
+                    door.handle_msg(evt)
+                };
+
+                ws.onclose = function(evt) {
+                    console.log("Connection closed.");
+                };
             }
         })
 
@@ -20,7 +68,16 @@
 
 </script>
 <div id='container' class="container">
-    Door
+    <div class="icon">
+        <div :class="{'lock-status': true, 'locked': locked != 0 , 'unlocked': locked == 0}">
+
+        </div>
+        <span class="txt-status">{{locked == 0? 'Unlocked':'Locked'}}</span>
+    </div>
+
+
+    <button @click='send_unlock' type="button" class="btn btn-success btn-lg unlock-btn" :disabled="unlocking">{{door_txt}}</button>
+
 </div>
 
 <%- include('./footer.ejs') %>

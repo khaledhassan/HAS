@@ -5,8 +5,8 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
-const char* ssid = "TPLINK";
-const char* password = "1123581321";
+const char* ssid = "TP-LINK_PocketAP_287C0A";
+const char* password = "";
 const char* mqtt_server = "10.42.0.1"; //always this if using TPLINK
 
 const char* NODE_NAME = "AC_NODE";

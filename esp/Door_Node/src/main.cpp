@@ -6,8 +6,8 @@
 
 #define LOCKED HIGH
  
-const char* ssid = "TPLINK";
-const char* password = "1123581321";
+const char* ssid = "TP-LINK_PocketAP_287C0A";
+const char* password = "";
 const char* mqtt_server = "10.42.0.1"; //Khaled's computer, will be chanded to 
 
 const char* NODE_NAME = "DOOR_NODE";

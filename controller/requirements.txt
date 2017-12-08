@@ -3,3 +3,4 @@ circuits
 paho-mqtt
 requests
 PyYAML
+websocket-client

@@ -69,13 +69,15 @@ void reconnect() {
     char join_buffer[128];
     JsonObject& join_event = jsonBuffer.createObject();
     join_event["mac"] = mac;
-    join_event["status"] = "JOIN";
+    join_event["type"] = "light";
+    join_event["status"] = "join";
   
     // Prepare joind and will json obj
     char will_buffer[128];
     JsonObject& will = jsonBuffer.createObject();
     will["mac"] = mac;
-    will["status"] = "LEAVE";
+    will["type"] = "light";
+    will["status"] = "leave";
   
     will.printTo(will_buffer);
     join_event.printTo(join_buffer);
@@ -116,6 +118,7 @@ void publish_state(){
     char state_buffer[128];
     JsonObject& state_msg = jsonBuffer.createObject();
     state_msg["mac"] = mac;
+    state_msg["type"] = "light";
     state_msg["state"] = light_on;
     state_msg.printTo(state_buffer);
     mqtt.publish(SENSOR_TOPIC, state_buffer);
@@ -126,6 +129,7 @@ void publish_motion(){
     char motion_buffer[128];
     JsonObject& motion_msg = jsonBuffer.createObject();
     motion_msg["mac"] = mac;
+    motion_msg["type"] = "light";
     motion_msg["motion"] = String("detected");
     motion_msg.printTo(motion_buffer);
     mqtt.publish(SENSOR_TOPIC, motion_buffer);
@@ -163,11 +167,11 @@ void onMsg(char* topic, byte* payload, unsigned int length) { //only command msg
     }
     
     // No switch support. 
-    if(root["cmd"] == "state") {
+    if(root["action"] == "state") {
         publish_state();
-    } else if(root["cmd"] == "light_on")  {
+    } else if(root["action"] == "on")  {
         change_state(true);
-    } else if(root["cmd"] == "light_off") {
+    } else if(root["action"] == "off") {
         change_state(false);
     } else {
       Serial.println("Unknown event received.");

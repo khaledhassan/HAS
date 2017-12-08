@@ -40,6 +40,8 @@ The "join" message is published with the MQTT "retain" flag set to ```True``` so
 ### JSON Message Definitions
 All instances of the node MAC address will be in uppercase and with no colons. This applies in both the JSON body and the MQTT topic name.
 
+All other variables and values in json are in lowercase.  
+
 #### ```join_leave```
 When connecting to the broker, each node publishes a message like the following:
 ```
@@ -65,7 +67,8 @@ If a node connects and then disconnects before the controller starts up, the con
 ```
 {
   "mac": <node MAC>,
-  "cmd": "light_on/light_off"
+  "type': "light",
+  "action": "on/off"
 }
 ```
 
@@ -82,7 +85,8 @@ This message is used by the controller to determine light state on controller st
 ```
 {
   "mac": <node MAC>,
-  "cmd": "state"
+  "type': "light",
+  "action": "status"
 }
 ```
 
@@ -90,6 +94,7 @@ This message is used by the controller to determine light state on controller st
 ```
 {
   "mac": <node MAC>,
+  "type': "light",
   "state": true/false
 }
 ```
@@ -98,7 +103,8 @@ This message is used by the controller to determine light state on controller st
 ```
 {
   "mac": <node MAC>,
-  "type": "FANON/FANOFF"
+  "type': "ac",
+  "action": "on/off"
 }
 ```
 
@@ -106,25 +112,29 @@ This message is used by the controller to determine light state on controller st
 ```
 {
   "mac": <node MAC>,
-  "type": "AC", 
+  "type": "ac", 
   "t": "75", 
   "h": "60"
 }
 ```
 
-#### Door Lock Node actuator (lock on/off)
-```
-{
-  "mac": <node MAC>,
-  "type": "LOCK/UNLOCK"
-}
-```
-
-#### Door Lock Node sensor (locked: 0/1)
+#### Door Lock Node actuator
 ```
 {
   "mac": <node MAC>,
   "type": "door",
-  "locked": 1
+  "action": "unlock" // only one action, that is unlock the door
 }
 ```
+
+#### Door Lock Node sensor (status: locked/unlocked)
+```
+{
+  "mac": <node MAC>,
+  "type": "door",
+  "status": "locked/unlocked"
+}
+```
+
+###JSON format between Websocket and frontend 
+To be added. 

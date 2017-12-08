@@ -82,15 +82,15 @@ void reconnect() {
   char join_buffer[128];
   JsonObject& join_event = jsonBuffer.createObject();
   join_event["mac"] = mac;
-  join_event["type"] = "AC";
-  join_event["status"] = "JOIN";
+  join_event["type"] = "door";
+  join_event["status"] = "join";
 
   // Prepare joind and will json obj
   char will_buffer[128];
   JsonObject& will = jsonBuffer.createObject();
   will["mac"] = mac;
-  will["type"] = "AC";
-  will["status"] = "LEAVE";
+  will["type"] = "door";
+  will["status"] = "leave";
 
   will.printTo(will_buffer);
   join_event.printTo(join_buffer);
@@ -141,7 +141,7 @@ void onMsg(char* topic, byte* payload, unsigned int length) { //only command msg
   }
   
   // No switch support.         
-  if(root["type"] == "UNLOCK")
+  if(root["action"] == "unlock")
   {
     lock_status = !LOCKED;
     recent_unlock_time = millis();
@@ -159,7 +159,7 @@ void report()
   JsonObject& data_up = jsonBuffer.createObject(); // generate string, quote
   data_up["mac"] = mac; // tell python who I am
   data_up["type"] = "door"; // tell python what node I am
-  data_up["locked"] =  lock_status == LOCKED? 1:0;
+  data_up["status"] =  lock_status == LOCKED? "locked":"unlocked";
   data_up.printTo(data_up_char); //dump json to output
   // output.toCharArray(data_up_char, 128);
   mqtt.publish(SENSOR_TOPIC, data_up_char);

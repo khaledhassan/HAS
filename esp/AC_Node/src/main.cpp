@@ -80,15 +80,15 @@ void reconnect() {
   StaticJsonBuffer<256> jsonBuffer; //only local 
   JsonObject& join_event = jsonBuffer.createObject();
   join_event["mac"] = mac;
-  join_event["type"] = "AC";
-  join_event["status"] = "JOIN";
+  join_event["type"] = "ac";
+  join_event["status"] = "join";
 
   // Prepare joind and will json obj
   char will_buffer[128];
   JsonObject& will = jsonBuffer.createObject();
   will["mac"] = mac;
-  will["type"] = "AC";
-  will["status"] = "LEAVE";
+  will["type"] = "ac";
+  will["status"] = "leave";
 
   will.printTo(will_buffer);
   join_event.printTo(join_buffer);
@@ -138,11 +138,11 @@ void onMsg(char* topic, byte* payload, unsigned int length) { //only command msg
   }
   
   // No switch support. 
-  if(root["type"] == "FANON")
+  if(root["action"] == "on")
   {
     fanStatus = HIGH;
     Serial.println("Fan turned on");
-  }else if(root["type"] == "FANOFF")
+  }else if(root["action"] == "off")
   {
     fanStatus = LOW;
     Serial.println("Fan turned off");
@@ -169,7 +169,7 @@ void report()
   StaticJsonBuffer<256> jsonBuffer; //only local 
   JsonObject& data_up = jsonBuffer.createObject(); // generate string, quote
   data_up["mac"] = mac; // tell python who I am
-  data_up["type"] = "AC"; // tell python what node I am
+  data_up["type"] = "ac"; // tell python what node I am
   data_up["t"] = f;
   data_up["h"] = humidity;
   data_up.printTo(data_up_char); //dump json to output

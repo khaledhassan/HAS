@@ -165,7 +165,7 @@ class MainController(Component):
         self.mqtt_client.on_connect = self.mqtt_on_connect
         self.mqtt_client.on_message = self.mqtt_on_message
         self.sub_controllers_initialized = False
-        self.wsthread = WSThread("ws://10.42.0.167:8080",  # TODO/FIXME/XXX: set this via an env variable
+        self.wsthread = WSThread("ws://web:8080",  # TODO/FIXME/XXX: set this via an env variable
                                  self.ws_on_open, self.ws_on_message,
                                  self.ws_on_close, self.ws_on_error)
         self.ws_client = self.wsthread.ws_client

@@ -9,7 +9,7 @@
             data: {
                 locked: true, //1, locked, 0, unlocked, -1, unlocking
                 unlocking: false,
-                wsadd: 'ws://10.42.0.167:8080'
+                wsadd: 'ws://' + window.location.hostname + ':8080'
             },
             methods:{
                 send_unlock: function(){

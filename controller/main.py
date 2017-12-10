@@ -10,111 +10,147 @@ import websocket
 if "MQTT_SERVER" in os.environ:
     mqtt_server = os.environ.get("MQTT_SERVER")
 else:
-    mqtt_server = "mqtt" # Handled by docker-compose link
+    mqtt_server = "mqtt"  # Handled by docker-compose link
 
-config = {} # XXX/TODO: move all config data into this dict so we can access it from all controllers without
-            # having to pass it back and forth a lot
+config = {}  # XXX/TODO: move all config data into this dict so we can access it from all controllers without
+             # having to pass it back and forth a lot
 
 nodes = {}
 
-target_temp = 60 # XXX/TODO: put this in the config object (via YAML, hopefully)
-motion_timeout_seconds = 5*60 # 5 minutes, XXX/TODO: put this in the config object (via YAML, hopefully)
+motion_timeout_seconds = 5*60  # 5 minutes, XXX/TODO: put this in the config object (via YAML, hopefully)
+
 
 class ac_sensor(Event):
     """AC Sensor Read Event"""
 
 
+class ac_control(Event):
+    """AC control message via WebSockets"""
+
+
 class AcController(Component):
-    def __init__(self, mqtt_client, mac):
+    def __init__(self, mqtt_client, ws_client, mac):
         super(AcController, self).__init__()
         self.mqtt_client = mqtt_client
+        self.ws_client = ws_client
         self.fan_on = False
         self.mac = mac
+        self.auto_mode = False
+        self.target_temp = 70
 
-    def change_fan_state(self, want_on):
+    def change_state(self, want_on):
         #XXX/TODO: now that we've refactored into a function that uses fan state, implement a state query command like we have in the light controller
         if want_on is not self.fan_on:
-            if want_on:
-                msg = json.dumps({"mac": self.mac, "type": "FANON"})
-            else:
-                msg = json.dumps({"mac": self.mac, "type": "FANOFF"})
-
+            msg = json.dumps({"mac": self.mac, "type": "ac", "action": "on" if want_on else "off"})
             self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
             self.fan_on = want_on
 
-
     @handler("ac_sensor")
-    def handle_msg(self, msg):
-        print("AC Controller got msg:")
-        print(msg)
-        if "t" in msg:
+    def handle_mqtt_msg(self, msg):
+        if self.auto_mode and "t" in msg:
             current_temp = msg["t"]
-            if current_temp > target_temp:
-                self.change_fan_state(True)
-            elif current_temp <= target_temp:
-                self.change_fan_state(False)
+            if current_temp > self.target_temp:
+                self.change_state(True)
+            elif current_temp <= self.target_temp:
+                self.change_state(False)
+
+        ws_payload = {"type": "ac", "status": "on" if self.fan_on else "off"}
+        if "t" in msg:
+            ws_payload["t"] = msg["t"]
+        if "h" in msg:
+            ws_payload["h"] = msg["h"]
+        self.ws_client.send(json.dumps(ws_payload))
+
+    @handler("ac_control")
+    def handle_ws_msg(self, msg):
+        if "mode" in msg:
+            self.auto_mode = True if msg["mode"] == "auto" else False
+            # set auto_mode before reading action so it makes
+            # sense if mode and target temp are set at the same time
+        if "action" in msg:
+            try:  # I would prefer to check self.auto_mode, but the message received may be inconsistent
+                self.target_temp = int(msg["action"])
+            except ValueError:  # not an integer
+                if msg["action"] == "on":
+                    self.change_state(True)
+                if msg["action"] == "off":
+                    self.change_state(False)
 
 
-class motion_sensor(Event):
+class light_sensor(Event):
     """Motion Detected Event, this event fires all controllers, but only one will respond"""
 
 
-class motion_timeout(Event):
+class light_control(Event):
+    """Light control message via WebSockets"""
+
+
+class light_timeout(Event):
     """Motion Sensor Timeout"""
 
 
 class LightController(Component):
-    def __init__(self, mqtt_client, mac):
+    def __init__(self, mqtt_client, ws_client, mac):
         super(LightController, self).__init__()
         self.mqtt_client = mqtt_client
+        self.ws_client = ws_client
         self.mac = mac
+        self.auto_mode = False
         self.timer = None
-        self.state = False # False means off, True means on. Query the light's actual state next:
+        self.state = False  # False means off, True means on. Query the light's actual state next:
         self.query_state()
 
     def query_state(self):
-        msg = json.dumps({"mac": self.mac, "cmd": "state"})
-        self.mqtt_client.publish("actuator/{}".format(self.mac), msg, retain=True) # retained message in case the controller starts before the node connects
+        msg = json.dumps({"mac": self.mac, "type": "light", "action": "status"})
+        self.mqtt_client.publish("actuator/{}".format(self.mac), msg, retain=True)
+        # retained message in case the controller starts before the node connects
 
     def change_state(self, want_on):
-        if want_on:
-            msg = json.dumps({"mac": self.mac, "cmd": "light_on"})
-        else:
-            msg = json.dumps({"mac": self.mac, "cmd": "light_off"})
-
-        self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
         self.state = want_on
+        mqtt_payload = json.dumps({"mac": self.mac, "type": "light", "action": "on" if self.state else "off"})
+        self.mqtt_client.publish("actuator/{}".format(self.mac), mqtt_payload)
+        ws_payload = json.dumps({"type": "light", "status": "on" if self.state else "off"})
+        self.ws_client.send(ws_payload)
 
-    @handler("motion_sensor")
-    def handle_msg(self, msg):
+    @handler("light_sensor")
+    def handle_mqtt_msg(self, msg):
         if "mac" in msg:
             if msg["mac"] == self.mac:
                 if "state" in msg:
                     self.state = msg["state"]
-                if "motion" in msg:
-                    self.change_state(want_on = True)
-
-                    if self.timer is not None: # set to None in __init__ and the handler for "motion_timeout"
-                        self.timer.reset() # if there was a timer from last time, reset it
+                if self.auto_mode and "motion" in msg:
+                    self.change_state(True)
+                    if self.timer is not None:  # set to None in __init__ and the handler for "light_timeout"
+                        self.timer.reset()  # if there was a timer from last time, reset it
                     else:
-                        self.timer = Timer(motion_timeout_seconds, motion_timeout(self.mac))
-                        self += self.timer # otherwise, re-register it (why does "self.register(self.timer)" not work?)
+                        self.timer = Timer(motion_timeout_seconds, light_timeout(self.mac))
+                        self += self.timer  # otherwise, re-register it (why does "self.register(self.timer)" not work?)
             else:
-                pass # message not for us, hopefully there's another controller out there
-        else:
-            pass # invalid message?
+                pass  # message not for us, hopefully there's another controller out there
 
-    @handler("motion_timeout")
+    @handler("light_control")
+    def handle_ws_msg(self, msg):
+        if "mode" in msg:
+            self.auto_mode = True if msg["mode"] == "auto" else False
+        if "action" in msg:
+            if msg["action"] == "on":
+                self.change_state(True)
+            if msg["action"] == "off":
+                self.change_state(False)
+
+    @handler("light_timeout")
     def handle_timer(self, mac):
         if mac == self.mac:
-            self.change_state(want_on = False)
-            self.timer = None # get ready for next motion detected
+            if self.auto_mode:
+                self.change_state(False)
+            self.timer = None  # get ready for next motion detected
         else:
-            pass # not meant for us!
+            pass  # not meant for us!
 
 
 class door_sensor(Event):
     """Door Sensor message via MQTT"""
+
 
 class door_control(Event):
     """Door control message via WebSockets"""
@@ -127,25 +163,19 @@ class DoorController(Component):
         self.ws_client = ws_client
         self.mac = mac
 
-    def started(self, *args):
-        pass
-
     @handler("door_sensor")
     def handle_mqtt_msg(self, msg):
         if "mac" in msg:
             if msg["mac"] == self.mac:
                 if "locked" in msg:
-                    ws_payload = {"type": "door", "status": ("locked" if msg["locked"] == 1 else "unlocked")}
-                    ws_payload_json = json.dumps(ws_payload)
-                    self.ws_client.send(ws_payload_json)
+                    ws_payload = json.dumps({"type": "door", "status": "locked" if msg["status"] == "locked" else "unlocked"})
+                    self.ws_client.send(ws_payload)
 
     @handler("door_control")
     def handle_ws_msg(self, msg):
-        print("in door_control event")
-        if "target" in msg:
-            mqtt_payload = {"mac": self.mac, "type": ("UNLOCK" if msg["target"] == "on" else "LOCK")}
-            mqtt_payload_json = json.dumps(mqtt_payload)
-            self.mqtt_client.publish("actuator/{}".format(self.mac), mqtt_payload_json)
+        if "action" in msg:
+            mqtt_payload = json.dumps({"mac": self.mac, "type": "door", "action": "unlock" if msg["action"] == "unlock" else "lock"})
+            self.mqtt_client.publish("actuator/{}".format(self.mac), mqtt_payload)
 
 
 class WSThread(threading.Thread):
@@ -188,9 +218,9 @@ class MainController(Component):
             # register sub-controllers
             for node in nodes:
                 if node["type"] == "AC":
-                    self += AcController(self.mqtt_client, node["mac"])
+                    self += AcController(self.mqtt_client, self.ws_client, node["mac"])
                 if node["type"] == "LIGHT":
-                    self += LightController(self.mqtt_client, node["mac"])
+                    self += LightController(self.mqtt_client, self.ws_client, node["mac"])
                 if node["type"] == "DOOR":
                     self += DoorController(self.mqtt_client, self.ws_client, node["mac"])
 
@@ -208,11 +238,11 @@ class MainController(Component):
                         if node["type"] == "AC":
                             self.fire(ac_sensor(msg))
                         elif node["type"] == "LIGHT":
-                            self.fire(motion_sensor(msg))
+                            self.fire(light_sensor(msg))
                         elif node["type"] == "DOOR":
                             self.fire(door_sensor(msg))
             else:
-                pass # invalid message, doesn't have "mac" field
+                pass  # invalid message, doesn't have "mac" field
         if msg_raw.topic.startswith("join_leave"):
             if ("mac" in msg) and ("status" in msg):
                 for node in nodes:
@@ -222,9 +252,9 @@ class MainController(Component):
                         elif msg["status"] == "leave":
                             node["online"] = False
                         else:
-                            pass # invalid message (status unknown)
+                            pass  # invalid message (status unknown)
             else:
-                pass # invalid message (needs mac and status)
+                pass  # invalid message (needs mac and status)
 
     def ws_on_open(self, ws):
         print("WebSocket connected")
@@ -233,11 +263,14 @@ class MainController(Component):
         try:
             msg = json.loads(message)
             if "type" in msg:
-                if msg["type"] == "door":
-                    print("firing door_control event")
+                if msg["type"] == "ac":
+                    self.fire(ac_control(msg))
+                elif msg["type"] == "light":
+                    self.fire(light_control(msg))
+                elif msg["type"] == "door":
                     self.fire(door_control(msg))
-        except:
-            pass
+        except ValueError:
+            pass  # invalid JSON
 
     def ws_on_close(self, ws):
         print("WebSocket disconnected")

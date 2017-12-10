@@ -1,4 +1,4 @@
-.icon .lock-status{
+.icon .status{
     margin: 16.66% auto 0;
     height: 256px;
     width: 256px;
@@ -12,11 +12,11 @@
     border-radius: 50%;
 }
 
-.icon .lock-status.locked{
+.icon .status.locked{
     background-image: url("/images/locked.png");
 }
 
-.icon .lock-status.unlocked{
+.icon .status.unlocked{
     background-image: url("/images/unlocked.png");
 }
 
@@ -30,4 +30,19 @@
 .unlock-btn{
     margin: 16px auto;
     display: block
+}
+
+/*Light*/
+.icon .status.light-on{
+    background-image: url("/images/light-on.png");
+}
+
+.icon .status.light-off{
+    background-image: url("/images/light-off.png");
+}
+
+.light-btn-group{
+    display: block;
+    width: 40%;
+    margin: 16px auto;
 }

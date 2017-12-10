@@ -9,7 +9,7 @@
             data: {
                 locked: true, //1, locked, 0, unlocked, -1, unlocking
                 unlocking: false,
-                wsadd: 'ws://10.42.0.167:8080'
+                wsadd: 'ws://' + window.location.hostname + ':8080'
             },
             methods:{
                 send_unlock: function(){
@@ -18,6 +18,10 @@
                         door.unlocking = false;
                     }, 3000)
 
+                    var j = {};
+                    j.type = "door";
+                    j.action = "unlock"
+                    ws.send(JSON.stringify(j))
                 },
                 handle_msg: function(msg){//ws msg
                     var data = msg.data;
@@ -29,7 +33,7 @@
                             this.locked = (data_from_sensor.status == 'locked')?true:false;
                         }
                     } catch(e) {
-                        alert(e); // error in the above string (in this case, yes)!
+                        console.log('Cannot json parse', msg); // error in the above string (in this case, yes)!
                     }
                 }
             },
@@ -50,7 +54,6 @@
 
                 ws.onopen = function(evt) {
                     console.log("Connection open ...");
-                    ws.send("Hello WebSockets!");
                 };
 
                 ws.onmessage = function(evt) {
@@ -69,7 +72,7 @@
 </script>
 <div id='container' class="container">
     <div class="icon">
-        <div :class="{'lock-status': true, 'locked': locked != 0 , 'unlocked': locked == 0}">
+        <div :class="{'status': true, 'locked': locked != 0 , 'unlocked': locked == 0}">
 
         </div>
         <span class="txt-status">{{locked == 0? 'Unlocked':'Locked'}}</span>

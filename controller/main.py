@@ -167,7 +167,7 @@ class DoorController(Component):
     def handle_mqtt_msg(self, msg):
         if "mac" in msg:
             if msg["mac"] == self.mac:
-                if "locked" in msg:
+                if "status" in msg:
                     ws_payload = json.dumps({"type": "door", "status": "locked" if msg["status"] == "locked" else "unlocked"})
                     self.ws_client.send(ws_payload)
 

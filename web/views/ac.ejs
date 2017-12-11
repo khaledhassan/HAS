@@ -65,7 +65,7 @@
 
                 ws.onmessage = function(evt) {
                     console.log( "Received Message: " + evt.data);
-                    light.handle_msg(evt)
+                    ac.handle_msg(evt)
                 };
 
                 ws.onclose = function(evt) {

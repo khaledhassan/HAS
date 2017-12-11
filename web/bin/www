@@ -29,7 +29,7 @@ wsserver.broadcast = function broadcast(data) {
 };
 
 wsserver.on('connection', function connection(ws, req) {
-    console.log(req.connection.remoteAddress)
+    console.log('connection from', req.connection.remoteAddress)
     ws.on('message', function incoming(data) {
         console.log(data)
         // Broadcast to everyone else.

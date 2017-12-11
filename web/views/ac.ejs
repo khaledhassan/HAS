@@ -1,14 +1,15 @@
 <%- include('./header.ejs') %>
 
-<!--<link href="/css/login.css" rel="stylesheet">-->
 
 <script>
     $(function(){
-        light = new Vue({
+        ac = new Vue({
             el: '#container',
             data: {
-                light: false, //1, on; 0, off.
+                ac_status: false, //true, on; false, off.
+                current_temp: 70,
                 mode: 'auto',
+                target_temp :60,
                 wsadd: 'ws://' + window.location.hostname + ':8080'
             },
             methods:{
@@ -16,10 +17,11 @@
                     var data = msg.data;
                     try {
                         var data_from_sensor = JSON.parse(data);
-                        if(data_from_sensor.type != 'light'){
+                        if(data_from_sensor.type != 'ac'){
                             return
                         }else{
-                            this.light = (data_from_sensor.status == 'on')?true:false;
+                            this.current_temp = data_from_sensor.t;
+                            this.ac_status = data_from_sensor.status == on?true:false
                         }
                     } catch(e) {
                         console.log('Cannot json parse', msg); // error in the above string (in this case, yes)!
@@ -27,21 +29,29 @@
                 },
                 toggle_mode: function (tar) {
                     this.mode = tar;
-                    if(tar == 'auto'){
-                        var j = {};
-                        j.type = "light"
-                        j.mode = "auto"
-                        ws.send(JSON.stringify(j))
-                    }
+                    // if(tar == 'auto'){
+                    //     var j = {};
+                    //     j.type = "ac"
+                    //     j.mode = "auto"
+                    //     j.action = this.target_temp
+                    //     ws.send(JSON.stringify(j))
+                    // }
                 },
                 manual_operate: function(tar){
-                    // this.light = tar == 'on'?true:false
+                    // this.ac_status = tar == 'on'?true:false
                     var j = {};
-                    j.type = 'light'
+                    j.type = 'ac'
                     j.mode = "manual"
-                    j.action = tar
+                    j.action= tar
                     ws.send(JSON.stringify(j))
-                }
+                },
+                auto_operate: function(){
+                    var j = {};
+                    j.type = 'ac'
+                    j.mode = "auto"
+                    j.action= this.target_temp
+                    ws.send(JSON.stringify(j))
+                },
             },
             computed: {
 
@@ -69,12 +79,11 @@
 </script>
 <div id='container' class="container">
     <div class="icon">
-        <div :class="{'status': true, 'light-on': light == 1 , 'light-off': light == 0}">
+        <div :class="{'status': true, 'ac-on': ac_status == 1 , 'ac-off': ac_status == 0}">
 
         </div>
-        <span class="txt-status">{{light == 1? 'Light is ON.':'Light is OFF. '}}</span>
+        <span class="txt-status">{{ac_status == true? 'A/C is ON.':'A/C is OFF. '}}</span>
     </div>
-
     <div class="btn-group clearfix center-container" role="group" aria-label="...">
         <button type="button" :class="{'btn': true, 'btn-default' : mode == 'manual', 'btn-primary' : mode == 'auto' }"
                 @click="toggle_mode('auto')">Auto</button>
@@ -82,12 +91,22 @@
                 @click="toggle_mode('manual')">Manual</button>
     </div>
 
-    <div v-if="mode == 'manual'" class="btn-group center-container clearfix" role="group" aria-label="...">
-        <button type="button" :class="{'btn': true, 'btn-default' : light == false, 'btn-primary' : light ==  true}"
+    <div v-if="mode == 'auto'" class="center-container">
+        <div class="input-group" style="width: 40%" >
+            <input type="text" class="form-control" v-model="target_temp" placeholder="Target Temperature">
+            <span class="input-group-btn">
+            <button @click="auto_operate()" class="btn btn-default" type="button">Set</button>
+          </span>
+        </div><!-- /input-group -->
+    </div>
+
+    <div v-else class="btn-group clearfix center-container" role="group" aria-label="...">
+        <button type="button" :class="{'btn': true, 'btn-default' : ac_status == false, 'btn-primary' : ac_status == true }"
                 @click="manual_operate('on')">On</button>
-        <button type="button" :class="{'btn': true, 'btn-default' : light == true, 'btn-primary' : light ==  false}"
+        <button type="button" :class="{'btn': true, 'btn-default' : ac_status == true, 'btn-primary' : ac_status == false }"
                 @click="manual_operate('off')">Off</button>
     </div>
+
 
 </div>
 

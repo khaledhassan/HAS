@@ -41,8 +41,19 @@
     background-image: url("/images/light-off.png");
 }
 
-.light-btn-group{
-    display: block;
-    width: 40%;
+/*AC*/
+.icon .status.ac-on{
+    background-image: url("/images/ac-on.png");
+}
+
+.icon .status.ac-off{
+    background-image: url("/images/ac-off.png");
+}
+
+/*Common*/
+.center-container
+{
+    display: flex;
+    justify-content: center;
     margin: 16px auto;
 }

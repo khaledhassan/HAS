@@ -21,7 +21,7 @@
                             return
                         }else{
                             this.current_temp = data_from_sensor.t;
-                            this.ac_status = data_from_sensor.status == on?true:false
+                            this.ac_status = data_from_sensor.status == 'on'?true:false
                         }
                     } catch(e) {
                         console.log('Cannot json parse', msg); // error in the above string (in this case, yes)!

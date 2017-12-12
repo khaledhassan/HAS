@@ -9,9 +9,8 @@ router.get('/', function(req, res, next) {
   {
     res.redirect('/login')
   }else{
-    res.render('index')
+      res.redirect('/door')
   }
-
 });
 
 module.exports = router;

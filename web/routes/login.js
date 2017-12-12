@@ -37,7 +37,7 @@ router.post('/', function (req, res, next) {
 
     if (verified == true) {//login succeeds
         req.session.logined = true;
-        res.redirect('/');
+        res.redirect('/door');
     } else {
         res.render('login', {
             fail: true

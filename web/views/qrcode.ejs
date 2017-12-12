@@ -1,10 +1,14 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Title</title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-  </head>
-  <body>
+<%- include('./header.ejs') %>
+
+<div id='container' class="container">
+  <div class="qrcode">
     <img src="<%= qrcode_base64%>">
-  </body>
-</html>
+  </div>
+
+</div>
+
+<%- include('./footer.ejs') %>
+
+
+
+

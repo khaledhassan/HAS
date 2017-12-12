@@ -8,6 +8,7 @@
             data: {
                 ac_status: false, //true, on; false, off.
                 current_temp: 70,
+                current_humidity: 30,
                 mode: 'auto',
                 target_temp :60,
                 wsadd: 'ws://' + window.location.hostname + ':8080'
@@ -21,6 +22,7 @@
                             return
                         }else{
                             this.current_temp = data_from_sensor.t;
+                            this.current_humidity = data_from_sensor.h;
                             this.ac_status = data_from_sensor.status == 'on'?true:false
                         }
                     } catch(e) {
@@ -82,6 +84,7 @@
         <div :class="{'status': true, 'ac-on': ac_status == 1 , 'ac-off': ac_status == 0}">
 
         </div>
+        <span class="txt-status">Temperature: {{current_temp}}°F. <br> Humidity: {{current_humidity}}%.</span>
         <span class="txt-status">{{ac_status == true? 'A/C is ON.':'A/C is OFF. '}}</span>
     </div>
     <div class="btn-group clearfix center-container" role="group" aria-label="...">

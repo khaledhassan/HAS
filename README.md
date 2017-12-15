@@ -1,6 +1,15 @@
 # HAS: Home Automation System
 Class project for EEL5934 IoT Design; Building Automation System using ESP8266 and Raspberry Pi
 
+## How to run the code
+0. Install Docker using your favorite package manager or using the instructions on https://www.docker.com. The free Docker CE (Community Edition) is the correct version. Make sure you also install docker-compose.
+1. Obtain this code (via zip file or from https://github.com/khaledhassan/HAS)
+2. Configure the ```config/nodes.yml``` file to include the MAC addresses for each node you have.
+3. `cd` to the `docker` directory and run the following command:
+```./run build ; ./run up -d``` or ```./run build ; ./run up -d ; ./run logs -f``` to see the log messages. 
+This starts the MQTT broker, the controller, and the web interface. The web interface is accessible at http://localhost:3000 or http://<Docker host's IP>:3000 if running on a different computer. You'll need the actual IP address to access remotely (like on a smartphone) and to configure the ESP node's firmware to talk to the MQTT broker. The MQTT broker listens on the default port of 1883.
+4. Modify the ESP firmware to connect to the MQTT broker as described above. 
+
 ## Directory structure
 Below is a proposed directory structure for this repository. Because the project should remain relatively simple overall, all components live together in the same repository.
 

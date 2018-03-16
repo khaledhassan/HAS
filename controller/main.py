@@ -17,7 +17,7 @@ config = {}  # XXX/TODO: move all config data into this dict so we can access it
 
 nodes = {}
 
-motion_timeout_seconds = 5*60  # 5 minutes, XXX/TODO: put this in the config object (via YAML, hopefully)
+motion_timeout_seconds = 30  # 5 minutes, XXX/TODO: put this in the config object (via YAML, hopefully)
 
 
 class ac_sensor(Event):
@@ -40,10 +40,10 @@ class AcController(Component):
 
     def change_state(self, want_on):
         #XXX/TODO: now that we've refactored into a function that uses fan state, implement a state query command like we have in the light controller
-        if want_on is not self.fan_on:
-            msg = json.dumps({"mac": self.mac, "type": "ac", "action": "on" if want_on else "off"})
-            self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
-            self.fan_on = want_on
+        #if want_on is not self.fan_on:
+        msg = json.dumps({"mac": self.mac, "type": "ac", "action": "on" if want_on else "off"})
+        self.mqtt_client.publish("actuator/{}".format(self.mac), msg)
+        self.fan_on = want_on
 
     @handler("ac_sensor")
     def handle_mqtt_msg(self, msg):
@@ -106,6 +106,7 @@ class LightController(Component):
         # retained message in case the controller starts before the node connects
 
     def change_state(self, want_on):
+        print("light: in change_state, want_on={}".format(want_on))
         self.state = want_on
         mqtt_payload = json.dumps({"mac": self.mac, "type": "light", "action": "on" if self.state else "off"})
         self.mqtt_client.publish("actuator/{}".format(self.mac), mqtt_payload)
